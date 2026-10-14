@@ -5,22 +5,22 @@
   "main": "index.js",
   "scripts": {
     "chroma": "npx chroma run --path ./data/chroma",
-    "parse": "tsx scripts/parse.ts",
-    "test:parse": "tsx scripts/test/test-parse.ts",
-    "vectorize": "tsx scripts/vectorize.ts",
-    "similarity": "tsx scripts/similarity.ts",
-    "bible:fetch": "tsx scripts/bible/fetch.ts",
-    "bible:check": "tsx scripts/bible/test-chroma.ts",
-    "bible:store-test": "tsx scripts/bible/store-test.ts",
-    "bible:store": "tsx scripts/bible/store-bible.ts",
-    "bible:chunks": "tsx scripts/bible/chunk.ts",
-    "bible:chunks-test": "tsx scripts/bible/chunk-test.ts"
+    "bible:parse": "tsx scripts/bible/parse.ts",
+    "bible:chunk": "tsx scripts/bible/chunk.ts",
+    "bible:embed": "tsx scripts/embed.ts",
+    "bible:store": "tsx scripts/bible/store.ts",
+    "test:parse": "tsx scripts/tests/test-parse.ts",
+    "test:chunk": "tsx scripts/tests/test-chunk.ts",
+    "test:store": "tsx scripts/tests/test-store.ts",
+
+    "bible:check": "tsx scripts/bible/test-chroma.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@chroma-core/default-embed": "^0.1.9",
     "chromadb": "^3.5.0",
     "dotenv": "^18.0.8",
     "openai": "^7.33.0"

@@ -10,7 +10,7 @@ import {
   extractBibleText,
   getCanonicalBookName,
   parseBible,
-} from '../parse.js';
+} from '../bible/parse.js';
 
 /**
  * Tests that extractBibleText returns only the Bible content.

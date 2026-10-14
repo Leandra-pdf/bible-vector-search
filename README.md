@@ -32,8 +32,13 @@ bible-vector-search/
 │   ├── bible/
 │   │   └── kjv.txt
 │   └── chroma/          # Local ChromaDB data (generated)
-├── scripts/
-│   └── bible/           # Bible processing scripts
+├── scripts/             # Bible processing scripts
+│   ├── bible/
+│   │   └── xxx 
+│   ├── tests/
+│   │   └── xxx 
+│   ├── xxx
+│   └── xxx  
 ├── lib/                 # Shared utilities, if needed
 ├── .env                 # Local API credentials (not committed)
 ├── .gitignore
