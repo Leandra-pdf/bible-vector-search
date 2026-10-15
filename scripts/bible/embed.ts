@@ -7,7 +7,7 @@
  */
 
 
-import { createEmbeddings } from '../../lib/openai.js';
+import { createEmbeddings } from '../../lib/openai';
 import type { BibleChunk } from './chunk.js';
 
 /**

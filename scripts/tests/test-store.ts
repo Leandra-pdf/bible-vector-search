@@ -41,7 +41,9 @@ async function testBibleStorage(): Promise<void> {
     embeddedChunks.push(result);
   }
 
-  const storedCount = await storeEmbeddedBibleChunks(embeddedChunks);
+  const storedCount = await storeEmbeddedBibleChunks(
+    embedBibleChunks(sampleChunks),
+  );
 
   assert.equal(storedCount, 2);
 

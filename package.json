@@ -4,16 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "next dev",
     "chroma": "npx chroma run --path ./data/chroma",
     "bible:parse": "tsx scripts/bible/parse.ts",
     "bible:chunk": "tsx scripts/bible/chunk.ts",
     "bible:embed": "tsx scripts/embed.ts",
     "bible:store": "tsx scripts/bible/store.ts",
+    "bible:ingest-chunks": "tsx scripts/bible/ingest-chunks.ts",
+    "bible:ingest-verses": "tsx scripts/bible/ingest-verses.ts",
+    "bible:search": "tsx scripts/bible/search.ts",
     "test:parse": "tsx scripts/tests/test-parse.ts",
     "test:chunk": "tsx scripts/tests/test-chunk.ts",
     "test:store": "tsx scripts/tests/test-store.ts",
-
-    "bible:check": "tsx scripts/bible/test-chroma.ts"
+    "test:search": "tsx scripts/tests/test-search.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,10 +26,13 @@
     "@chroma-core/default-embed": "^0.1.9",
     "chromadb": "^3.5.0",
     "dotenv": "^18.0.8",
+    "next": "^16.4.0",
     "openai": "^7.33.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "@types/react": "19.3.0",
+    "next": "^16.4.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

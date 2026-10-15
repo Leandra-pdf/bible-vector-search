@@ -3,7 +3,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { chunkBibleVerses } from '../chunk.js';
+import { chunkBibleVerses } from '../bible/chunk.js';
 import { parseBible } from '../bible/parse.js';
 import type { BibleVerse } from '../bible/parse.js';
 
