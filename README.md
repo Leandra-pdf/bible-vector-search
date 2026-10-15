@@ -13,7 +13,7 @@ This project demonstrates an end-to-end semantic search pipeline:
 5. Search the stored passages using natural-language queries.
 6. Display matching individual verses and multi-verse chunks in a web interface.
 
-The search endpoint queries two collections: `bible_verses` and `bible_chunks_5verse`. Each collection can return up to three matching results, subject to a cosine-distance threshold of `0.6`.
+The search endpoint queries two collections: `bible_verses` and `bible_chunks_5verse`. Each collection can return up to `k` candidates, with `k` defaulting to `3`, subject to a cosine-distance threshold of `0.6`.
 
 ## Tech Stack
 
@@ -137,7 +137,9 @@ Enter a natural-language question, such as:
 - `Where does the Bible talk about patience?`
 - `How many Marys are there?`
 
-The interface displays results from both collections, including each passage's reference, text, similarity score, and cosine distance.
+The interface includes a **K** field, requests per collection, which defaults to `3`. The interface displays results from both collections, including each passage's reference, text, similarity score, and cosine distance.
+
+The query must contain at least one letter. The result count must be a positive whole number. Invalid input is rejected before the UI sends a search request.
 
 ## Search API
 
@@ -149,6 +151,17 @@ Content-Type: application/json
 ```
 
 ### Request
+
+The `query` field is required. The optional `k` field specifies the maximum number of candidates requested from each collection.
+
+```json
+{
+  "query": "What did Aaron help Moses do?",
+  "k": 5
+}
+```
+
+If `k` is omitted, it defaults to `3`:
 
 ```json
 {
@@ -165,6 +178,7 @@ Example response structure:
 ```json
 {
   "query": "What did Aaron help Moses do?",
+  "k": 1,
   "individualVerses": [
     {
       "reference": "Exodus 4:16",
@@ -188,42 +202,49 @@ The passage text and numeric values above illustrate the response format; actual
 
 ### Search behavior
 
-- The endpoint requests up to **three candidates per collection**.
-- A result is included only when its cosine distance is **less than or equal to `0.6`**.
-- The endpoint can return up to three individual verses and three multi-verse chunks, for a maximum of six results per request.
-- A collection may return fewer than three results if some candidates fail the threshold.
-- The threshold is applied after retrieving the top three candidates. The search does not fetch replacement candidates when a retrieved candidate exceeds the threshold.
+- The `k` parameter controls the maximum number of candidates requested from **each collection**.
+- Setting `"k": 5` requests up to five individual-verse candidates and five multi-verse-chunk candidates, for a maximum of ten returned results before threshold filtering.
+- `k` must be a positive integer. Values such as `0`, `-1`, `2.5`, and `"five"` are rejected with HTTP `400`.
+- A result is included only when its cosine distance is less than or equal to `0.6`.
+- The threshold is applied after retrieving the top `k` candidates from each collection. If some candidates exceed the threshold, fewer than `k` results may be returned for that collection. The search does not fetch replacement candidates.
+- The endpoint returns the requested `k` value in its response.
 
-### Understanding the metrics
-
-- **Cosine distance:** Measures how far apart the query embedding and a stored embedding are under the collection's cosine-distance metric. Lower values indicate closer matches.
-- **Similarity score:** The project calculates this display value as `1 - distance`. Higher values indicate closer matches under this convention.
-
-The similarity score is a derived ranking indicator, not a probability that a passage is relevant.
-
-### Error handling
-
-The API returns HTTP `400` when the request does not contain a non-empty string `query`.
-
-For example:
-
-```json
-{
-  "error": "Request body must contain a non-empty query string."
-}
-```
-
-Unexpected server-side failures return HTTP `500` with a generic error message.
-
-### Test the endpoint with curl
+### Example API requests with curl
 
 With ChromaDB and Next.js running, execute:
 
+Request two candidates per collection
+
 ```bash
-curl -X POST http://localhost:3000/search \
+curl -s -X POST http://localhost:3000/search \
   -H "Content-Type: application/json" \
-  -d '{"query":"What did Aaron help Moses do?"}' \
-  | jq
+  -d '{"query":"love is patient","k":2}' \
+  | jq .
+```
+
+Use the default of three candidates per collection:
+
+```bash
+curl -s -X POST http://localhost:3000/search \
+  -H "Content-Type: application/json" \
+  -d '{"query":"love is patient"}' \
+  | jq .
+```
+
+Test query validation:
+
+```bash
+curl -i -X POST http://localhost:3000/search \
+  -H "Content-Type: application/json" \
+  -d '{"query":";/.;","k":3}'
+```
+
+Test `k` validation:
+
+```bash
+curl -i -X POST http://localhost:3000/search \
+  -H "Content-Type: application/json" \
+  -d '{"query":"love is patient","k":0}'
 ```
 
 To test empty-query validation:
@@ -235,7 +256,37 @@ curl -i -X POST http://localhost:3000/search \
   | jq
 ```
 
-The second request should return HTTP `400`.
+### Understanding the metrics
+
+- **Cosine distance:** Measures how far apart the query embedding and a stored embedding are under the collection's cosine-distance metric. Lower values indicate closer matches.
+- **Similarity score:** The project calculates this display value as `1 - distance`. Higher values indicate closer matches under this convention.
+
+The similarity score is a derived ranking indicator, not a probability that a passage is relevant.
+
+### Error handling
+
+The API validates requests before performing a search.
+
+| Condition | HTTP status | Behavior |
+|---|---:|---|
+| Malformed JSON request body | `400` | Returns an invalid JSON error |
+| Missing `query` field | `400` | Explains that a query string is required |
+| Empty or non-string query | `400` | Requires a non-empty string |
+| Query contains no letters, such as `;/.;` | `400` | Requires at least one letter |
+| `k` is not a number, is not an integer, or is less than `1` | `400` | Requires a positive integer |
+| Unexpected search or server failure | `500` | Returns a generic server error |
+
+The web interface performs query and result-count validation before sending a request. The API independently repeats validation so that invalid requests are rejected even when the endpoint is called directly.
+
+Example error response:
+
+```json
+{
+  "error": "Query must contain at least one letter."
+}
+```
+
+Unexpected server-side failures return a generic error message without exposing internal details.
 
 ## Available npm Scripts
 

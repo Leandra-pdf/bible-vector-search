@@ -1,11 +1,6 @@
 
 'use client';
 
-/**
- * Provides a simple UI for searching Bible passages.
- * Displays individual verses and multi-verse chunks separately.
- */
-
 import { useState } from 'react';
 
 /** Represents a Bible passage returned by the search API. */
@@ -19,24 +14,22 @@ type BibleChunk = {
 /** Represents the successful response from POST /search. */
 type SearchResponse = {
   query: string;
+  k: number;
   individualVerses: BibleChunk[];
   multiVerseChunks: BibleChunk[];
 };
 
-/**
- * Renders the search form and displays results from both collections.
- */
+/** Displays the Bible search form and matching passages. */
 export default function Home() {
   const [query, setQuery] = useState('');
+  const [k, setK] = useState('3');
   const [individualVerses, setIndividualVerses] = useState<BibleChunk[]>([]);
   const [multiVerseChunks, setMultiVerseChunks] = useState<BibleChunk[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  /**
-   * Sends the query to the search API and stores both result sets.
-   */
+  /** Sends the search query and requested result count to the API. */
   async function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -46,13 +39,29 @@ export default function Home() {
     setMultiVerseChunks([]);
     setSearched(false);
 
+    const trimmedQuery = query.trim();
+    const resultCount = Number(k);
+
+    if (!trimmedQuery) {
+      setError('Please enter a question.');
+      return;
+    }
+
+    if (!/\p{L}/u.test(trimmedQuery)) {
+      setError('Your question must contain at least one letter.');
+      return;
+    }
+
+    if (k.trim() === '' || !Number.isInteger(resultCount) || resultCount < 1) {
+      setError('Results per collection must be a positive whole number.');
+      return;
+    }
+
     try {
       const response = await fetch('/search', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, k: Number(k) }),
       });
 
       const data: unknown = await response.json();
@@ -66,14 +75,12 @@ export default function Home() {
         ) {
           setError(data.error);
         } else {
-          setError('Something went wrong. Please try again.');
+          setError('Search failed. Please try again.');
         }
-
         return;
       }
 
       const result = data as SearchResponse;
-
       setIndividualVerses(result.individualVerses);
       setMultiVerseChunks(result.multiVerseChunks);
       setSearched(true);
@@ -84,17 +91,51 @@ export default function Home() {
     }
   }
 
+  /** Renders a list of passages with their similarity scores and distances. */
+  function renderResults(results: BibleChunk[]) {
+    if (results.length === 0) {
+      return <p>No matching passages found.</p>;
+    }
+
+    return (
+      <div>
+        {results.map((passage, index) => (
+          <article
+            key={`${passage.reference}-${index}`}
+            style={{
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '12px',
+            }}
+          >
+            <h3>{passage.reference}</h3>
+            <p>{passage.text}</p>
+            <p>
+              <strong>Similarity score:</strong> {passage.score.toFixed(3)}
+            </p>
+            <p>
+              <strong>Cosine distance:</strong> {passage.distance.toFixed(3)}
+            </p>
+          </article>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <main
       style={{
-        maxWidth: '760px',
-        margin: '60px auto',
-        padding: '0 24px',
+        maxWidth: '800px',
+        margin: '40px auto',
+        padding: '0 20px',
         fontFamily: 'Arial, sans-serif',
       }}
     >
-      <h1>Bible Passage Search</h1>
-      <p>Ask a question to find related Bible passages.</p>
+      <h1>Bible Vector Search</h1>
+      <p>
+        Search the King James Version of the Bible using semantic similarity.
+      </p>
 
       <form onSubmit={handleSearch}>
         <label
@@ -109,30 +150,55 @@ export default function Home() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="What did Aaron help Moses do?"
-          rows={3}
+          required
+          rows={4}
           style={{
-            boxSizing: 'border-box',
             width: '100%',
+            boxSizing: 'border-box',
             padding: '12px',
             fontSize: '16px',
             border: '1px solid #ccc',
             borderRadius: '6px',
-            resize: 'vertical',
+          }}
+        />
+
+        <label
+          htmlFor="k"
+          style={{ display: 'block', marginTop: '16px', marginBottom: '8px' }}
+        >
+          K
+        </label>
+
+        <input
+          id="k"
+          type="number"
+          min={1}
+          step={1}
+          required
+          value={k}
+          onChange={(event) => setK(event.target.value)}
+          style={{
+            width: '100%',
+            boxSizing: 'border-box',
+            padding: '10px',
+            fontSize: '16px',
+            border: '1px solid #ccc',
+            borderRadius: '6px',
           }}
         />
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading}   
           style={{
-            marginTop: '12px',
-            padding: '10px 18px',
+            marginTop: '16px',
+            padding: '10px 20px',
             fontSize: '16px',
-            cursor: loading ? 'wait' : 'pointer',
-            borderRadius: '6px',
+            backgroundColor: loading ? '#9ca3af' : '#16a34a',
+            color: '#ffffff',
             border: 'none',
-            backgroundColor: '#245b45',
-            color: 'white',
+            borderRadius: '6px',
+            cursor: loading ? 'wait' : 'pointer',
           }}
         >
           {loading ? 'Searching...' : 'Search'}
@@ -140,80 +206,19 @@ export default function Home() {
       </form>
 
       {error && (
-        <p
-          role="alert"
-          style={{
-            marginTop: '24px',
-            padding: '12px',
-            color: '#b42318',
-            backgroundColor: '#fef3f2',
-            borderRadius: '6px',
-          }}
-        >
+        <p role="alert" style={{ color: 'red', marginTop: '16px' }}>
           {error}
         </p>
       )}
 
       {searched && (
-        <>
-          <section style={{ marginTop: '32px' }}>
-            <h2>
-              Individual Bible Verses ({individualVerses.length} results)
-            </h2>
+        <section style={{ marginTop: '32px' }}>
+          <h2>Individual Verse Results</h2>
+          {renderResults(individualVerses)}
 
-            {individualVerses.length === 0 ? (
-              <p>No individual verses passed the distance threshold.</p>
-            ) : (
-              individualVerses.map((verse, index) => (
-                <article
-                  key={`${verse.reference}-${index}`}
-                  style={{
-                    marginTop: '16px',
-                    padding: '16px',
-                    border: '1px solid #ddd',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <h3 style={{ marginTop: 0 }}>{verse.reference}</h3>
-                  <p style={{ lineHeight: 1.6, marginBottom: 0 }}>
-                    {verse.text}
-                  </p>
-                  <p>Similarity score: {verse.score.toFixed(3)}</p>
-                  <p>Cosine distance: {verse.distance.toFixed(3)}</p>
-                </article>
-              ))
-            )}
-          </section>
-
-          <section style={{ marginTop: '32px' }}>
-            <h2>
-              Multiple Bible Verse Chunks ({multiVerseChunks.length} results)
-            </h2>
-
-            {multiVerseChunks.length === 0 ? (
-              <p>No multi-verse chunks passed the distance threshold.</p>
-            ) : (
-              multiVerseChunks.map((chunk, index) => (
-                <article
-                  key={`${chunk.reference}-${index}`}
-                  style={{
-                    marginTop: '16px',
-                    padding: '16px',
-                    border: '1px solid #ddd',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <h3 style={{ marginTop: 0 }}>{chunk.reference}</h3>
-                  <p style={{ lineHeight: 1.6, marginBottom: 0 }}>
-                    {chunk.text}
-                  </p>
-                  <p>Similarity score: {chunk.score.toFixed(3)}</p>
-                  <p>Cosine distance: {chunk.distance.toFixed(3)}</p>
-                </article>
-              ))
-            )}
-          </section>
-        </>
+          <h2 style={{ marginTop: '32px' }}>Five-Verse Chunk Results</h2>
+          {renderResults(multiVerseChunks)}
+        </section>
       )}
     </main>
   );
