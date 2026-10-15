@@ -12,6 +12,8 @@ import { useState } from 'react';
 type BibleChunk = {
   reference: string;
   text: string;
+  score: number;
+  distance: number;
 };
 
 /** Represents the successful response from POST /search. */
@@ -176,6 +178,8 @@ export default function Home() {
                   <p style={{ lineHeight: 1.6, marginBottom: 0 }}>
                     {verse.text}
                   </p>
+                  <p>Similarity score: {verse.score.toFixed(3)}</p>
+                  <p>Cosine distance: {verse.distance.toFixed(3)}</p>
                 </article>
               ))
             )}
@@ -203,6 +207,8 @@ export default function Home() {
                   <p style={{ lineHeight: 1.6, marginBottom: 0 }}>
                     {chunk.text}
                   </p>
+                  <p>Similarity score: {chunk.score.toFixed(3)}</p>
+                  <p>Cosine distance: {chunk.distance.toFixed(3)}</p>
                 </article>
               ))
             )}

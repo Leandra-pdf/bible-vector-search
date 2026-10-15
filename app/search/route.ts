@@ -1,13 +1,14 @@
 /**
  * Provides the POST /search API endpoint for Bible semantic search.
- * Accepts a question and returns individual-verse and multi-verse search results.
+ * Searches individual verses and five-verse chunks in ChromaDB.
  */
 
 import { NextResponse } from 'next/server';
 import { searchBible } from '../../scripts/bible/search';
 
 /**
- * Handles a Bible search request and returns results from both collections.
+ * Handles a Bible search request and returns matching passages
+ * from both collections.
  */
 export async function POST(request: Request) {
   try {
@@ -33,17 +34,22 @@ export async function POST(request: Request) {
       searchBible(query, 'bible_chunks_5verse', 3),
     ]);
 
-    return NextResponse.json({
-      query,
-      individualVerses: verseResults.map((result) => ({
-        reference: result.reference,
-        text: result.text,
-      })),
-      multiVerseChunks: chunkResults.map((result) => ({
-        reference: result.reference,
-        text: result.text,
-      })),
-    });
+    
+  return NextResponse.json({
+    query,
+    individualVerses: verseResults.map((result) => ({
+      reference: result.reference,
+      text: result.text,
+      score: result.score,
+      distance: result.distance,
+    })),
+    multiVerseChunks: chunkResults.map((result) => ({
+      reference: result.reference,
+      text: result.text,
+      score: result.score,
+      distance: result.distance,
+    })),
+  });
   } catch (error: unknown) {
     console.error('Bible search endpoint failed:', error);
 

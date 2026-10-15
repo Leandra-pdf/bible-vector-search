@@ -79,6 +79,7 @@ export async function searchBible(
     reference: string;
     text: string;
     distance: number;
+    score: number;
   }[] = [];
 
   for (let i = 0; i < documents.length; i++) {
@@ -102,6 +103,7 @@ export async function searchBible(
           : 'Unknown reference',
       text: document,
       distance,
+      score: 1 - distance,
     });
   }
 
